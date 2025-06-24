@@ -7,6 +7,7 @@ from src.services import (
     get_task_service,
     filter_tasks_service,
     get_task_status_service,
+    cancel_task_service,
 )
 from src.core.db import get_async_session
 
@@ -58,3 +59,14 @@ async def get_task_status_endpoint(
     session: AsyncSession = Depends(get_async_session),
 ):
     return await get_task_status_service(session, task_id)
+
+
+@router.delete("/{task_id}", response_model=TaskRead)
+async def cancel_task_endpoint(
+    task_id: uuid.UUID,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Отмена задачи по id (разрешено только для NEW, PENDING, IN_PROGRESS)
+    """
+    return await cancel_task_service(session, task_id)
