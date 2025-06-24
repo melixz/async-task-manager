@@ -3,6 +3,7 @@ from .task_service import (
     get_task_service,
     filter_tasks_service,
     get_task_status_service,
+    cancel_task_service,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "get_task_service",
     "filter_tasks_service",
     "get_task_status_service",
+    "cancel_task_service",
 ]

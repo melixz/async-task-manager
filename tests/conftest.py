@@ -5,15 +5,12 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Убираем ручное добавление sys.path, так как pytest.ini уже настроен
-from main import app
-from core.db import get_async_session
-from models import Base
+from src.main import app
+from src.core.db import get_async_session
+from src.models import Base
 
-# Настройка тестовой базы данных
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-# Создание тестового движка
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
     connect_args={"check_same_thread": False},
@@ -62,7 +59,6 @@ async def async_client(
     async_session: AsyncSession,
 ) -> AsyncGenerator[AsyncClient, None]:
     """Фикстура для создания HTTP клиента для тестирования FastAPI приложения"""
-    # Переопределяем зависимость базы данных
     app.dependency_overrides[get_async_session] = override_get_async_session
 
     async with AsyncClient(
@@ -70,5 +66,4 @@ async def async_client(
     ) as client:
         yield client
 
-    # Очищаем переопределения после теста
     app.dependency_overrides.clear()
