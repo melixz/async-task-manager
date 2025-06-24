@@ -1,7 +1,7 @@
 services:
   postgres:
-    image: postgres:15-alpine
-    container_name: async_task_manager_postgres
+    image: postgres:14-alpine
+    container_name: async_task_postgres
     environment:
       POSTGRES_DB: async_task_manager
       POSTGRES_USER: user
@@ -10,6 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d async_task_manager"]
       interval: 10s
@@ -17,8 +18,8 @@ services:
       retries: 5
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: async_task_manager_rabbitmq
+    image: rabbitmq:3.12-management-alpine
+    container_name: async_task_rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -32,6 +33,40 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  api:
+    build: .
+    container_name: async_task_api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/async_task_manager
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  worker:
+    build: .
+    container_name: async_task_worker
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/async_task_manager
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: ["python", "run_worker.py"]
+    volumes:
+      - .:/app
+    restart: unless-stopped
 
 volumes:
   postgres_data:

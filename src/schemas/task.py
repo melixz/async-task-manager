@@ -39,6 +39,7 @@ class TaskRead(BaseModel):
     error: Optional[str]
 
     model_config = ConfigDict(
+        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
@@ -54,7 +55,7 @@ class TaskRead(BaseModel):
                     "error": None,
                 }
             ]
-        }
+        },
     )
 
 
@@ -65,11 +66,12 @@ class TaskStatusRead(BaseModel):
     status: str
 
     model_config = ConfigDict(
+        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {"id": "b3b7c7e2-8c2e-4e2a-9c2e-7e2a8c2e4e2a", "status": "IN_PROGRESS"}
             ]
-        }
+        },
     )
 
 

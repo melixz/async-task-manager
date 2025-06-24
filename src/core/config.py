@@ -1,4 +1,4 @@
-from pydantic import BaseSettings, PostgresDsn, AmqpDsn
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -6,12 +6,14 @@ class Settings(BaseSettings):
     Класс конфигурации приложения.
 
     Атрибуты:
-        database_url: строка подключения к PostgreSQL (PostgresDsn)
-        rabbitmq_url: строка подключения к RabbitMQ (AmqpDsn)
+        database_url: строка подключения к PostgreSQL
+        rabbitmq_url: строка подключения к RabbitMQ
     """
 
-    database_url: PostgresDsn
-    rabbitmq_url: AmqpDsn
+    database_url: str = (
+        "postgresql+asyncpg://user:password@localhost/async_task_manager"
+    )
+    rabbitmq_url: str = "amqp://guest:guest@localhost:5672/"
 
     class Config:
         env_file = ".env"

@@ -1,14 +1,26 @@
-.PHONY: help up down build logs clean migrate migrate-create test lint format dev-setup	
+.PHONY: help up down build logs clean migrate migrate-create test lint format dev-setup dev worker api-only worker-only
 
 help: ## Показать справку
 	@echo "Доступные команды:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-up: ## Запустить сервисы (PostgreSQL + RabbitMQ)
+up: ## Запустить все сервисы (DB + RabbitMQ + API + Worker)
 	docker-compose up -d
 
-down: ## Остановить сервисы
+down: ## Остановить все сервисы
 	docker-compose down
+
+api-only: ## Запустить только базовые сервисы (DB + RabbitMQ)
+	docker-compose up -d postgres rabbitmq
+
+worker-only: ## Запустить только воркер задач
+	uv run python run_worker.py
+
+dev: ## Запуск API в режиме разработки (локально)
+	uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+worker: ## Запуск воркера задач (локально)
+	uv run python run_worker.py
 
 build: ## Собрать Docker-образ
 	docker build -t async-task-manager .
@@ -27,7 +39,7 @@ migrate-create: ## Создать новую миграцию
 	uv run alembic revision --autogenerate -m "$(message)"
 
 test: ## Запустить тесты
-	uv run pytest
+	PYTHONPATH=. uv run pytest
 
 lint: ## Проверить код линтером
 	uv run ruff check .

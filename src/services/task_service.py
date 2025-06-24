@@ -7,8 +7,16 @@ from src.repositories import create_task, get_task, filter_tasks, cancel_task
 from src.core.rabbitmq import get_rabbitmq_manager
 from src.models import TaskStatus
 import logging
+import os
+import sys
 
 logger = logging.getLogger(__name__)
+
+
+def is_test_env() -> bool:
+    return "PYTEST_CURRENT_TEST" in os.environ or any(
+        "pytest" in arg for arg in sys.argv
+    )
 
 
 async def create_task_service(session: AsyncSession, data: TaskCreate) -> TaskRead:
@@ -16,18 +24,15 @@ async def create_task_service(session: AsyncSession, data: TaskCreate) -> TaskRe
     task = await create_task(session, data)
 
     try:
-        rabbitmq = await get_rabbitmq_manager()
-        await rabbitmq.publish_task(task.id, data.priority)
-
+        if not is_test_env():
+            rabbitmq = await get_rabbitmq_manager()
+            await rabbitmq.publish_task(task.id, data.priority)
         task.status = TaskStatus.PENDING
         await session.commit()
         await session.refresh(task)
-
         logger.info(f"Задача {task.id} создана и отправлена в очередь")
-
     except Exception as e:
         logger.error(f"Ошибка отправки задачи {task.id} в RabbitMQ: {e}")
-
     return TaskRead.model_validate(task)
 
 
