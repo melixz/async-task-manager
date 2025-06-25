@@ -1,4 +1,4 @@
-.PHONY: help up down build logs clean migrate migrate-create test lint format dev-setup dev worker api-only worker-only
+.PHONY: help up down build logs clean migrate migrate-create test lint format dev-setup dev worker api-only worker-only test-integration
 
 help: ## Показать справку
 	@echo "Доступные команды:"
@@ -39,7 +39,7 @@ migrate-create: ## Создать новую миграцию
 	uv run alembic revision --autogenerate -m "$(message)"
 
 test: ## Запустить тесты
-	PYTHONPATH=. uv run pytest
+	uv run pytest
 
 lint: ## Проверить код линтером
 	uv run ruff check .
@@ -55,3 +55,6 @@ dev-setup: ## Настройка окружения для разработки
 	@echo "Применение миграций..."
 	uv run alembic upgrade head
 	@echo "Готово! Сервисы запущены и миграции применены."
+
+test-integration: ## Запустить интеграционные тесты
+	pytest tests/test_integration

@@ -34,7 +34,6 @@ async def test_create_and_get_task(async_client: AsyncClient):
     status_data = resp.json()
     assert status_data["id"] == task_id
     assert status_data["status"] in [
-        "NEW",
         "PENDING",
         "IN_PROGRESS",
         "COMPLETED",
