@@ -1,69 +1,60 @@
+# ruff: noqa: E402
+import os
+
+
+TEST_DB_URL = "sqlite+aiosqlite:///./test.db"
+
+os.environ["DATABASE_URL"] = TEST_DB_URL
+os.environ["RABBITMQ_URL"] = "amqp://guest:guest@localhost:5672/"
+
+
 import pytest
-import asyncio
-from typing import AsyncGenerator
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from src.main import app
-from src.core.db import get_async_session
-from src.models import Base
+from src.async_task_manager.core.db import get_async_session
+from src.async_task_manager.main import app
+from src.async_task_manager.models.task import Base
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-test_engine = create_async_engine(
-    TEST_DATABASE_URL,
+engine = create_async_engine(
+    TEST_DB_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
     echo=False,
 )
 
-TestSessionLocal = async_sessionmaker(
-    test_engine, expire_on_commit=False, class_=AsyncSession
-)
+TestSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Создание event loop для всей сессии тестов"""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def setup_database():
-    """Создание таблиц в тестовой базе данных"""
-    async with test_engine.begin() as conn:
+@pytest.fixture(autouse=True)
+async def create_test_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
     yield
-    async with test_engine.begin() as conn:
+
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture
-async def async_session() -> AsyncGenerator[AsyncSession, None]:
-    """Фикстура для создания сессии базы данных для каждого теста"""
-    async with TestSessionLocal() as session:
+async def async_session():
+    async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as session:
         yield session
 
 
 async def override_get_async_session():
-    """Переопределение зависимости для получения тестовой сессии"""
-    async with TestSessionLocal() as session:
+    async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as session:
         yield session
 
 
 @pytest.fixture
-async def async_client(
-    async_session: AsyncSession,
-) -> AsyncGenerator[AsyncClient, None]:
-    """Фикстура для создания HTTP клиента для тестирования FastAPI приложения"""
+async def async_client(async_session):
     app.dependency_overrides[get_async_session] = override_get_async_session
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
-
     app.dependency_overrides.clear()

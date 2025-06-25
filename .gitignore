@@ -242,4 +242,5 @@ cython_debug/
 #.idea/
 
 uv.lock
+test.db
 

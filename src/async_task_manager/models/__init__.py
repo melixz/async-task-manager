@@ -1,4 +1,4 @@
-from .task import Base, Task, TaskStatus, TaskPriority
+from .task import Base, Task, TaskPriority, TaskStatus
 
 __all__ = [
     "Base",
