@@ -1,7 +1,6 @@
 # ruff: noqa: E402
 import os
 
-
 TEST_DB_URL = "sqlite+aiosqlite:///./test.db"
 
 os.environ["DATABASE_URL"] = TEST_DB_URL

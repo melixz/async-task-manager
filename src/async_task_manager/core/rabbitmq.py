@@ -1,11 +1,12 @@
-import uuid
-from typing import Optional, Dict
-import aio_pika
-from aio_pika import Message, DeliveryMode, ExchangeType
-from aio_pika.abc import AbstractConnection, AbstractChannel, AbstractQueue
 import json
 import logging
-from src.core.config import settings
+import uuid
+
+import aio_pika
+from aio_pika import DeliveryMode, ExchangeType, Message
+from aio_pika.abc import AbstractChannel, AbstractConnection, AbstractQueue
+
+from async_task_manager.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,15 +15,15 @@ class RabbitMQManager:
     """Менеджер для работы с RabbitMQ очередями задач."""
 
     def __init__(self):
-        self.connection: Optional[AbstractConnection] = None
-        self.channel: Optional[AbstractChannel] = None
+        self.connection: AbstractConnection | None = None
+        self.channel: AbstractChannel | None = None
         self.task_exchange = None
-        self.queues: Dict[str, AbstractQueue] = {}
+        self.queues: dict[str, AbstractQueue] = {}
 
     async def connect(self) -> None:
         """Установить соединение с RabbitMQ."""
         try:
-            self.connection = await aio_pika.connect_robust(str(settings.rabbitmq_url))
+            self.connection = await aio_pika.connect_robust(str(settings.RABBITMQ_URL))
             self.channel = await self.connection.channel()
 
             await self.channel.set_qos(prefetch_count=1)

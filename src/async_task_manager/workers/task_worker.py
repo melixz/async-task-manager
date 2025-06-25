@@ -1,13 +1,15 @@
 import asyncio
 import json
-import uuid
 import logging
-from datetime import datetime, timezone
+import uuid
+from datetime import UTC, datetime
+
 from aio_pika.abc import AbstractIncomingMessage
-from src.core.rabbitmq import get_rabbitmq_manager
-from src.core.db import async_session_maker
-from src.models import Task, TaskStatus
 from sqlalchemy import select, update
+
+from async_task_manager.core.db import async_session_maker
+from async_task_manager.core.rabbitmq import get_rabbitmq_manager
+from async_task_manager.models import Task, TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +51,7 @@ class TaskWorker:
             logger.error(f"Ошибка consumer для {priority}: {e}")
             raise
 
-    async def _process_message(
-        self, message: AbstractIncomingMessage, priority: str
-    ) -> None:
+    async def _process_message(self, message: AbstractIncomingMessage, priority: str) -> None:
         """
         Обработка сообщения из очереди.
 
@@ -91,9 +91,7 @@ class TaskWorker:
                     return
 
                 if task.status != TaskStatus.PENDING:
-                    logger.warning(
-                        f"Задача {task_id} имеет статус {task.status}, пропускаем"
-                    )
+                    logger.warning(f"Задача {task_id} имеет статус {task.status}, пропускаем")
                     return
 
                 await session.execute(
@@ -101,7 +99,7 @@ class TaskWorker:
                     .where(Task.id == task_id)
                     .values(
                         status=TaskStatus.IN_PROGRESS,
-                        started_at=datetime.now(timezone.utc),
+                        started_at=datetime.now(UTC),
                     )
                 )
                 await session.commit()
@@ -115,7 +113,7 @@ class TaskWorker:
                     .where(Task.id == task_id)
                     .values(
                         status=TaskStatus.COMPLETED,
-                        finished_at=datetime.now(timezone.utc),
+                        finished_at=datetime.now(UTC),
                         result=result,
                     )
                 )
@@ -132,15 +130,13 @@ class TaskWorker:
                         .where(Task.id == task_id)
                         .values(
                             status=TaskStatus.FAILED,
-                            finished_at=datetime.now(timezone.utc),
+                            finished_at=datetime.now(UTC),
                             error=str(e),
                         )
                     )
                     await session.commit()
                 except Exception as update_error:
-                    logger.error(
-                        f"Ошибка обновления статуса задачи {task_id}: {update_error}"
-                    )
+                    logger.error(f"Ошибка обновления статуса задачи {task_id}: {update_error}")
 
                 raise
 
@@ -160,9 +156,7 @@ class TaskWorker:
         delay = priority_delays.get(task.priority.value, 5)
         await asyncio.sleep(delay)
 
-        return (
-            f"Задача '{task.title}' выполнена успешно. Приоритет: {task.priority.value}"
-        )
+        return f"Задача '{task.title}' выполнена успешно. Приоритет: {task.priority.value}"
 
     async def stop(self) -> None:
         """Остановка воркера."""

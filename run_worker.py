@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from src.workers import run_worker
+
+from async_task_manager.workers import run_worker
 
 if __name__ == "__main__":
     logging.basicConfig(

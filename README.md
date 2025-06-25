@@ -2,6 +2,8 @@
 
 Асинхронный сервис управления задачами с RabbitMQ и PostgreSQL.
 
+![img.png](img.png)
+
 ## Функциональность
 
 - **REST API** для управления задачами (создание, получение, отмена)
@@ -13,11 +15,34 @@
 
 ## Быстрый старт
 
-### 1. Запуск всех сервисов
+### 1. Настройка
+
+1. Установите [uv](https://github.com/astral-sh/uv):
+
 ```bash
-# Клонирование и переход в каталог
-git clone <repo-url>
-cd async-task-manager
+# На Linux/macOS через curl
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# или через pipx
+pipx install uv
+```
+
+2. Создайте виртуальное окружение и активируйте его:
+
+```bash
+uv venv
+source .venv/bin/activate  # Linux/Mac
+# или
+.venv\Scripts\activate  # Windows
+```
+
+3. Установите зависимости проекта:
+
+```bash
+uv sync
+```
+
+### 2. Запуск всех сервисов
+```bash
 
 # Запуск всех сервисов (API + Worker + DB + RabbitMQ)
 make up
@@ -97,11 +122,8 @@ DELETE /api/v1/tasks/{task_id}
 
 ## Разработка
 
-### Настройка окружения
+### Возможности приложения
 ```bash
-# Установка зависимостей
-uv sync
-
 # Запуск только базовых сервисов (DB + RabbitMQ)
 make api-only
 
@@ -128,9 +150,7 @@ make format         # Отформатировать код
 
 ### Переменные окружения
 ```bash
-# .env файл (создать локально)
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/async_task_manager
-RABBITMQ_URL=amqp://guest:guest@localhost:5672/
+Посмотри в .env.template и добавь в свой .env
 ```
 
 ## Система приоритетов
@@ -152,18 +172,6 @@ RABBITMQ_URL=amqp://guest:guest@localhost:5672/
 - **FAILED** - ошибка при выполнении задачи
 - **CANCELLED** - задача отменена пользователем
 
-## Технологии
-
-- **Python 3.12** - основной язык
-- **FastAPI** - веб-фреймворк
-- **PostgreSQL 14** - база данных
-- **RabbitMQ 3.12** - брокер сообщений
-- **SQLAlchemy 2.0** - ORM
-- **Alembic** - миграции
-- **aio-pika** - асинхронный клиент RabbitMQ
-- **Pydantic v2** - валидация данных
-- **Docker & Docker Compose** - контейнеризация
-
 ## Мониторинг
 
 - **RabbitMQ Management UI**: http://localhost:15672
@@ -175,6 +183,9 @@ RABBITMQ_URL=amqp://guest:guest@localhost:5672/
 ```bash
 # Запуск тестов
 make test
+
+# Запуск интеграционных тестов 
+make test-integration
 
 # Тестирование API
 curl -X POST http://localhost:8000/api/v1/tasks/ \

@@ -1,5 +1,5 @@
 from .error import ErrorDetail, HealthStatus, ValidationError
-from .task import TaskCreate, TaskFilter, TaskRead, TaskStatusRead
+from .task import PriorityLiteral, StatusLiteral, TaskCreate, TaskFilter, TaskRead, TaskStatusRead
 
 __all__ = [
     "TaskCreate",
@@ -9,4 +9,6 @@ __all__ = [
     "ErrorDetail",
     "ValidationError",
     "HealthStatus",
+    "PriorityLiteral",
+    "StatusLiteral",
 ]
