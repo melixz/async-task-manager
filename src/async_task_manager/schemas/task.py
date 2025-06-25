@@ -4,7 +4,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Перечислимые литералы для схем API
 PriorityLiteral = Literal["LOW", "MEDIUM", "HIGH"]
 StatusLiteral = Literal[
     "NEW",
